@@ -1,0 +1,8 @@
+spring:
+  config:
+    activate:
+      on-profile: demo
+  h2:
+    console:
+      enabled: true
+      path: /h2-console

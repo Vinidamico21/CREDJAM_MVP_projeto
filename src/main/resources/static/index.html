@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CREDJAM — Atualização de saldo FGTS</title>
+<style>
+:root{
+ --caixa-azul:#005ca9;        /* azul institucional Caixa */
+ --caixa-azul-escuro:#003a70; /* azul-marinho para cabeçalho */
+ --caixa-azul-claro:#e8f1fb;  /* fundo suave dos campos */
+ --caixa-azul-borda:#9cc3e8;
+ --caixa-laranja:#f39200;     /* cor de apoio Caixa */
+ --tinta:#16263b;
+ --tinta-suave:#4a5d73;
+ font-family:system-ui,"Segoe UI",sans-serif;color:var(--tinta);background:#eef3f8;
+}
+*{box-sizing:border-box}
+body{margin:0}
+header{background:linear-gradient(135deg,var(--caixa-azul-escuro),var(--caixa-azul));color:#fff;padding:24px max(20px,calc((100% - 1100px)/2));box-shadow:0 2px 8px rgba(0,58,112,.25)}
+header h1{margin:0;letter-spacing:.5px}
+header .sub{opacity:.9;margin-top:4px}
+main{max-width:1100px;margin:24px auto;padding:0 18px}
+.panel{background:#fff;border:1px solid #d6e2ef;border-radius:14px;padding:22px;margin-bottom:18px;box-shadow:0 1px 3px rgba(0,58,112,.06)}
+h2{margin-top:0;color:var(--caixa-azul-escuro)}
+
+/* Faixa de título de seção, no azul Caixa */
+.section-title{display:flex;align-items:center;gap:10px;margin:4px 0 16px;padding:10px 14px;background:var(--caixa-azul-claro);border-left:5px solid var(--caixa-azul);border-radius:8px;color:var(--caixa-azul-escuro);font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+
+/* Campos em cartão, destacados com azul */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.field{background:var(--caixa-azul-claro);border:1px solid var(--caixa-azul-borda);border-radius:10px;padding:14px;transition:border-color .15s,box-shadow .15s}
+.field:focus-within{border-color:var(--caixa-azul);box-shadow:0 0 0 3px rgba(0,92,169,.18)}
+label{display:block;font-weight:700;font-size:.9rem;color:var(--caixa-azul-escuro)}
+input,select{display:block;width:100%;padding:10px;margin-top:8px;border:1px solid var(--caixa-azul-borda);border-radius:8px;font:inherit;background:#fff;color:var(--tinta)}
+input:focus,select:focus{outline:0;border-color:var(--caixa-azul);box-shadow:0 0 0 2px rgba(0,92,169,.25)}
+
+.notice{background:#fff6e0;border:1px solid #f0c75a;padding:14px;border-radius:10px}
+.error{background:#fde7e7;border:1px solid #e09a9a;padding:14px;border-radius:10px;color:#7f1c1c}
+.info{background:var(--caixa-azul-claro);border:1px solid var(--caixa-azul-borda);padding:16px;border-radius:10px;line-height:1.5}
+.info strong{color:var(--caixa-azul-escuro)}
+
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.metric{background:var(--caixa-azul-claro);border:1px solid var(--caixa-azul-borda);padding:14px;border-radius:10px}
+.metric strong{color:var(--caixa-azul-escuro)}
+
+table{width:100%;border-collapse:collapse;overflow:auto}
+th,td{padding:10px;border-bottom:1px solid #dbe6f1;text-align:left;font-size:.9rem;white-space:nowrap}
+th{background:var(--caixa-azul);color:#fff}
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #dbe6f1}
+.muted{color:var(--tinta-suave);font-size:.9rem}
+.help{margin-top:8px;color:var(--tinta-suave);font-size:.84rem;font-weight:400;line-height:1.4}
+.required{color:#c62828;font-weight:800}
+.tag{display:inline-block;background:#fff;border:1px solid var(--caixa-azul-borda);border-radius:999px;padding:2px 10px;font-size:.74rem;color:var(--caixa-azul);font-weight:700;margin-top:8px}
+
+details{margin-top:16px;border:1px solid var(--caixa-azul-borda);border-radius:12px;padding:0;background:#fbfdff;overflow:hidden}
+summary{cursor:pointer;font-weight:800;color:var(--caixa-azul-escuro);padding:14px 16px;background:var(--caixa-azul-claro);list-style-position:inside}
+.details-body{padding:16px}
+
+/* Botões no padrão azul Caixa */
+button{border:0;border-radius:9px;padding:11px 18px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
+.btn-primary{background:var(--caixa-azul);color:#fff}
+.btn-primary:hover{background:var(--caixa-azul-escuro)}
+.btn-secondary{background:#fff;color:var(--caixa-azul);border:1px solid var(--caixa-azul)}
+.btn-secondary:hover{background:var(--caixa-azul-claro)}
+.btn-outline{background:#fff;color:#c62828;border:1px solid #e0a3a3}
+.btn-outline:hover{background:#fdeeee}
+.btn-sm{padding:8px 14px;font-size:.86rem}
+
+.group-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.group-actions .hint{color:var(--tinta-suave);font-size:.82rem}
+.form-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:20px;padding-top:18px;border-top:2px solid var(--caixa-azul-claro)}
+
+.equation{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:10px;align-items:center;background:var(--caixa-azul-claro);border:1px solid var(--caixa-azul-borda);border-radius:12px;padding:16px;margin-top:12px}
+.eq-card{background:#fff;border:1px solid var(--caixa-azul-borda);border-radius:10px;padding:12px}
+.eq-card strong{display:block;font-size:1.2rem;margin-top:4px;color:var(--caixa-azul-escuro)}
+.eq-op{font-size:1.5rem;font-weight:800;color:var(--caixa-azul)}
+.demo-badge{margin-top:10px;background:#fdeeee;border:1px solid #e0a3a3;color:#7f1c1c;padding:12px;border-radius:10px}
+.detail-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.pager-btn{background:#fff;color:var(--caixa-azul);border:1px solid var(--caixa-azul-borda);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:700}
+.pager-btn:disabled{opacity:.5;cursor:not-allowed}
+.obs{display:inline-block;max-width:300px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+@media (max-width:900px){.equation{grid-template-columns:1fr}.eq-op{text-align:center}.obs{max-width:200px}}
+</style></head>
+<body>
+<header>
+ <h1>CREDJAM</h1>
+ <div class="sub">Caixa Econômica Federal · Motor demonstrativo de atualização de saldo FGTS</div>
+</header>
+<main>
+
+<div class="panel info">
+<strong>Como funciona:</strong> este é um <strong>MVP</strong> que reproduz, em Java, a rotina de atualização de saldo do CREDJAM — o fluxo originalmente implementado no COBOL do FGTS. O objetivo é demonstrar e validar o encadeamento do cálculo, não substituir o legado.<br><br>
+<strong>Rotina de atualização:</strong> o motor parte do saldo conhecido numa data-base e o evolui, período a período, até a data de corte. Em cada período ele seleciona a taxa aplicável (3%, 4%, 5% ou 6% a.a.), busca o coeficiente JAM da data, calcula o crédito sobre o saldo — apenas quando positivo — e avança para o período seguinte. O cálculo é <strong>sucessivo</strong>: o resultado de cada período é a base do próximo, repetindo-se até a data de corte.<br><br>
+É uma recomposição do estado da conta, não um novo lançamento financeiro.
+</div>
+
+<div class="notice"><strong>Ambiente de demonstração.</strong> Os coeficientes e calendários carregados neste MVP são fictícios, servem apenas para exercitar o fluxo técnico e não devem ser usados para cálculo financeiro real.</div>
+
+<section class="panel"><h2>Dados da atualização</h2>
+<form id="form">
+
+<div class="section-title">Dados principais da atualização</div>
+<p class="muted"><span class="required">*</span> Campos obrigatórios para executar o cálculo.</p>
+<div class="grid">
+<div class="field"><label>Origem <span class="required">*</span><select name="origem" required><option>DEMONSTRACAO</option><option>FGTS_DIGITAL</option><option>PGFN</option></select></label><div class="help">Contexto/sistema de origem da solicitação. Para o cenário atual do MVP, use DEMONSTRACAO.</div></div>
+<div class="field"><label>Data-base <span class="required">*</span><input name="dataBase" type="date" required></label><div class="help">Data a que corresponde o saldo informado. É o ponto de partida da evolução.</div></div>
+<div class="field"><label>Data de corte <span class="required">*</span><input name="dataLimite" type="date" required></label><div class="help">Data final até a qual o saldo será atualizado. Deve ser igual ou posterior à data-base e não pode ser futura.</div></div>
+<div class="field"><label>Saldo inicial <span class="required">*</span><input name="saldoInicial" type="number" step="0.01" min="0" required></label><div class="help">Saldo consolidado na data-base, expresso na <strong>moeda vigente naquela data</strong> — pode não ser Real. Ex.: data-base em 1969 significa saldo em cruzeiros; se a data-base for a partir de 01/07/1994, o valor está em Real. O motor aplica as conversões monetárias (1986, 1989, 1993, 1994) ao longo do período até a data de corte, então o resultado final é apresentado em Real. É apenas o ponto de partida, não um novo depósito.</div></div>
+</div>
+
+<div class="group-actions">
+<button type="button" class="btn-secondary btn-sm" id="preencherObrig">Preencher obrigatórios</button>
+<button type="button" class="btn-outline btn-sm" id="limparObrig">Limpar obrigatórios</button>
+<span class="hint">Gera ou apaga apenas os campos obrigatórios acima.</span>
+</div>
+
+<details>
+<summary>Dados complementares / históricos</summary>
+<div class="details-body">
+<p class="muted">Campos opcionais. São usados apenas quando o período ou a regra histórica exigir informações adicionais; na atualização simples podem ficar em branco.</p>
+<div class="grid">
+<div class="field"><label>Total de depósitos inicial<input name="totalDepositosInicial" type="number" step="0.01" min="0"></label><div class="tag">Condicional</div><div class="help">Base histórica usada na composição do estado e no fechamento do JAM, na mesma moeda da data-base (pode não ser Real). Não representa depósito novo durante a execução.</div></div>
+<div class="field"><label>JAM informado inicial<input name="jamInformadoInicial" type="number" step="0.01"></label><div class="tag">Condicional</div><div class="help">JAM que já compõe o estado na data-base, na mesma moeda da data-base. Não é o JAM calculado pelo motor e não deve ser somado de novo ao saldo inicial.</div></div>
+<div class="field"><label>Saldo pós-JAM<input name="saldoPosJamInicial" type="number" step="0.01"></label><div class="tag">Condicional</div><div class="help">Estado intermediário usado em alguns cenários do legado, na mesma moeda da data-base. Normalmente dispensável na atualização simples.</div></div>
+<div class="field"><label>Saldo complementar<input name="saldoComplementarInicial" type="number" step="0.01"></label><div class="tag">Condicional</div><div class="help">Estado histórico para regras específicas, como o complemento de 01/04/1976, na mesma moeda da data-base. Não corresponde ao saldo normal da conta.</div></div>
+<div class="field"><label>Data de opção<input name="dataOpcao" type="date"></label><div class="tag">Condicional</div><div class="help">Pode determinar o regime/taxa histórica da conta (3%, 4%, 5% ou 6% ao ano).</div></div>
+<div class="field"><label>Código de afastamento<input name="codigoAfastamento" maxlength="2" placeholder="Ex.: U1"></label><div class="tag">Condicional</div><div class="help">Parâmetro histórico, usado somente quando exigido pelas regras do cenário.</div></div>
+<div class="field"><label>Data de afastamento<input name="dataAfastamento" type="date"></label><div class="tag">Condicional</div><div class="help">Parâmetro histórico, usado somente quando exigido pelas regras do cenário.</div></div>
+<div class="field"><label>Tipo de conta<input name="tipoConta" placeholder="Ex.: DEMONSTRACAO"></label><div class="tag">Condicional</div><div class="help">Enquadramento histórico da conta conforme o cenário analisado.</div></div>
+</div>
+
+<div class="group-actions">
+<button type="button" class="btn-secondary btn-sm" id="preencherOpc">Preencher opcionais</button>
+<button type="button" class="btn-outline btn-sm" id="limparOpc">Limpar opcionais</button>
+<span class="hint">Gera ou apaga apenas os campos complementares acima.</span>
+</div>
+</div>
+</details>
+
+<div class="notice" style="margin-top:16px"><strong>Lançamentos históricos:</strong> necessários apenas em cenários históricos específicos. A atualização simples parte de um estado consolidado e não exige o cadastro de movimentos individuais.</div>
+<div class="info" style="margin-top:14px"><strong>Lançamento × Estado × Atualização</strong><br>
+<strong>Lançamento:</strong> evento financeiro na história da conta (depósito, débito, saque, JAM, regularização).<br>
+<strong>Estado:</strong> fotografia da situação financeira em uma data.<br>
+<strong>Atualização:</strong> processo que parte de um estado conhecido e o evolui cronologicamente, aplicando JAM e regras correspondentes.<br><br>
+Os registros de execução/simulação e a memória de cálculo representam a simulação do motor, não novos lançamentos financeiros na conta FGTS.</div>
+
+<div class="form-actions">
+<button type="submit" class="btn-primary">Executar atualização</button>
+</div>
+</form><p id="msg" class="muted"></p></section>
+
+<section id="resultado" class="panel" hidden>
+<h2>Resultado</h2>
+<div class="muted">O motor partiu do saldo informado na data-base e percorreu, cronologicamente, os períodos de atualização até a data de corte. Em cada período foram aplicadas a taxa, o coeficiente e as regras correspondentes, e o resultado serviu de base para o período seguinte.</div>
+<div id="demoAviso" class="demo-badge" hidden><strong>Resultado demonstrativo:</strong> foram utilizados coeficientes e parâmetros fictícios.</div>
+<div id="resumo" class="metrics" style="margin-top:12px"></div>
+<div id="equacao" class="equation" aria-label="Consolidado financeiro"></div>
+<div id="fluxo" class="muted" style="margin-top:10px"></div>
+<div id="avisosBox" class="notice" hidden style="margin-top:12px"><strong>Avisos</strong><ul id="avisos"></ul></div>
+
+<div class="detail-controls">
+<button id="detalhesToggle" type="button" class="btn-secondary">Ver detalhes do cálculo</button>
+</div>
+
+<section id="detalhesSection" hidden>
+<h3>Memória de cálculo</h3>
+<div id="paginacaoInfo" class="muted"></div>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Data da atualização</th><th>Taxa</th><th>Coeficiente</th><th>Base de cálculo</th><th>JAM do período</th><th>Saldo anterior</th><th>Saldo posterior</th><th>Observação/regra aplicada</th></tr></thead><tbody id="linhas"></tbody></table></div>
+<div class="detail-controls">
+<button id="prevPage" type="button" class="pager-btn">Anterior</button>
+<span id="pageLabel" class="muted"></span>
+<button id="nextPage" type="button" class="pager-btn">Próxima</button>
+</div>
+</section>
+</section>
+</main>
+<script>
+const form=document.querySelector('#form'), msg=document.querySelector('#msg'), resultado=document.querySelector('#resultado');
+const brl=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const dataPt=v=>v?new Date(v+'T00:00:00').toLocaleDateString('pt-BR'):'-';
+const PAGE_SIZE=20;
+let memoriaCompleta=[];
+let paginaAtual=1;
+
+const detalhesToggle=document.querySelector('#detalhesToggle');
+const detalhesSection=document.querySelector('#detalhesSection');
+const prevPageBtn=document.querySelector('#prevPage');
+const nextPageBtn=document.querySelector('#nextPage');
+
+function truncarObs(texto,max=90){
+ if(!texto) return '';
+ return texto.length<=max?texto:texto.slice(0,max-3)+'...';
+}
+
+function totalPaginas(){
+ return Math.max(1,Math.ceil(memoriaCompleta.length/PAGE_SIZE));
+}
+
+function renderPagina(){
+ const total=memoriaCompleta.length;
+ const paginas=totalPaginas();
+ if(paginaAtual>paginas) paginaAtual=paginas;
+ const inicio=(paginaAtual-1)*PAGE_SIZE;
+ const fim=Math.min(inicio+PAGE_SIZE,total);
+ const fatia=memoriaCompleta.slice(inicio,fim);
+
+ document.querySelector('#linhas').innerHTML=fatia.map(i=>{
+  const obsCompleta=(i.regraEspecial?i.regraEspecial+' - ':'')+(i.observacao||'');
+  const obsCurta=truncarObs(obsCompleta);
+  return `<tr><td>${i.sequencia}</td><td>${dataPt(i.dataCoeficiente)}</td><td>${i.taxaAnual}%</td><td>${i.coeficienteAplicado}</td><td>${brl(i.baseCalculo)}</td><td>${brl(i.jamPeriodo)}</td><td>${brl(i.saldoAnterior)}</td><td>${brl(i.saldoPosterior)}</td><td><span class="obs" title="${(obsCompleta||'').replace(/"/g,'&quot;')}">${obsCurta}</span></td></tr>`;
+ }).join('');
+
+ document.querySelector('#paginacaoInfo').textContent=total===0
+  ?'Sem períodos processados.'
+  :`Exibindo ${inicio+1}-${fim} de ${total} períodos`;
+ document.querySelector('#pageLabel').textContent=`Página ${paginaAtual} de ${paginas}`;
+ prevPageBtn.disabled=paginaAtual===1;
+ nextPageBtn.disabled=paginaAtual===paginas;
+}
+
+detalhesToggle.addEventListener('click',()=>{
+ const abrindo=detalhesSection.hidden;
+ detalhesSection.hidden=!abrindo;
+ detalhesToggle.textContent=abrindo?'Ocultar detalhes':'Ver detalhes do cálculo';
+ if(abrindo) renderPagina();
+});
+
+prevPageBtn.addEventListener('click',()=>{
+ if(paginaAtual===1) return;
+ paginaAtual--;
+ renderPagina();
+});
+
+nextPageBtn.addEventListener('click',()=>{
+ if(paginaAtual>=totalPaginas()) return;
+ paginaAtual++;
+ renderPagina();
+});
+
+const campoValor=n=>form.querySelector(`[name=${n}]`);
+const setValor=(n,v)=>{const el=campoValor(n);if(el)el.value=v;};
+const randInt=(min,max)=>Math.floor(Math.random()*(max-min+1))+min;
+const randMoeda=(min,max)=>(Math.random()*(max-min)+min).toFixed(2);
+const isoData=d=>d.toISOString().slice(0,10);
+
+const CAMPOS_OBRIGATORIOS=['origem','dataBase','dataLimite','saldoInicial'];
+const CAMPOS_OPCIONAIS=['totalDepositosInicial','jamInformadoInicial','saldoPosJamInicial',
+ 'saldoComplementarInicial','dataOpcao','codigoAfastamento','dataAfastamento','tipoConta'];
+
+// Guarda a data-base gerada para manter coerência entre os grupos (data de corte >= data-base).
+let dataBaseGerada=null;
+
+// Preenche somente os campos OBRIGATÓRIOS com um cenário válido e randomizado.
+// Datas ficam na janela de coeficientes fictícios do MVP (2024) e respeitam dataLimite >= dataBase e não futura.
+function preencherObrigatorios(){
+ const origens=['DEMONSTRACAO','FGTS_DIGITAL','PGFN'];
+ setValor('origem',origens[randInt(0,origens.length-1)]);
+
+ dataBaseGerada=new Date(2024,0,randInt(1,15)); // janeiro/2024
+ const dataLimite=new Date(dataBaseGerada);
+ dataLimite.setMonth(dataLimite.getMonth()+randInt(1,3));
+ const hoje=new Date();
+ if(dataLimite>hoje) dataLimite.setTime(hoje.getTime());
+ setValor('dataBase',isoData(dataBaseGerada));
+ setValor('dataLimite',isoData(dataLimite));
+
+ setValor('saldoInicial',randMoeda(5000,50000));
+
+ msg.className='muted';
+ msg.textContent='Campos obrigatórios preenchidos com dados de demonstração. Revise antes de executar.';
+}
+
+// Preenche somente os campos OPCIONAIS, coerentes com o saldo informado (se houver).
+function preencherOpcionais(){
+ const saldo=Number(campoValor('saldoInicial').value)||Number(randMoeda(5000,50000));
+ const totalDepositos=Number((saldo*(0.7+Math.random()*0.2)).toFixed(2));
+ setValor('totalDepositosInicial',totalDepositos.toFixed(2));
+ setValor('jamInformadoInicial',Math.max(0,saldo-totalDepositos).toFixed(2));
+ setValor('saldoPosJamInicial','');
+ setValor('saldoComplementarInicial','0.00');
+ setValor('dataOpcao','');
+ setValor('codigoAfastamento','');
+ setValor('dataAfastamento','');
+ setValor('tipoConta','DEMONSTRACAO');
+
+ msg.className='muted';
+ msg.textContent='Campos complementares preenchidos com dados de demonstração. Revise antes de executar.';
+}
+
+function limparObrigatorios(){
+ const sel=campoValor('origem');
+ if(sel) sel.selectedIndex=0;
+ ['dataBase','dataLimite','saldoInicial'].forEach(n=>setValor(n,''));
+ dataBaseGerada=null;
+ resultado.hidden=true;
+ msg.className='muted';
+ msg.textContent='Campos obrigatórios limpos.';
+}
+
+function limparOpcionais(){
+ CAMPOS_OPCIONAIS.forEach(n=>setValor(n,''));
+ msg.className='muted';
+ msg.textContent='Campos complementares limpos.';
+}
+
+document.querySelector('#preencherObrig').addEventListener('click',preencherObrigatorios);
+document.querySelector('#limparObrig').addEventListener('click',limparObrigatorios);
+document.querySelector('#preencherOpc').addEventListener('click',preencherOpcionais);
+document.querySelector('#limparOpc').addEventListener('click',limparOpcionais);
+
+form.addEventListener('submit',async e=>{
+ e.preventDefault(); msg.textContent='Processando...'; resultado.hidden=true;
+ const f=new FormData(form), val=k=>f.get(k);
+ const number=k=>val(k)===''?null:String(val(k));
+ const body={origem:val('origem'),dataBase:val('dataBase'),dataLimite:val('dataLimite'),
+ saldoInicial:number('saldoInicial'),totalDepositosInicial:number('totalDepositosInicial'),
+ jamInformadoInicial:number('jamInformadoInicial'),saldoPosJamInicial:number('saldoPosJamInicial'),
+ saldoComplementarInicial:number('saldoComplementarInicial'),dataOpcao:val('dataOpcao')||null,
+ tipoConta:val('tipoConta')||null,dadosHistoricosCompletos:false,
+ codigoAfastamento:val('codigoAfastamento')||null,dataAfastamento:val('dataAfastamento')||null,lancamentosHistoricos:[]};
+ try{
+  const r=await fetch('/api/v1/atualizacoes-conta',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok){msg.className='error';msg.textContent=(d.codigo||'ERRO')+': '+(d.mensagem||'Não foi possível processar.');return;}
+  msg.className='muted';msg.textContent='Execução concluída.';
+  resultado.hidden=false;
+  const avisos=Array.isArray(d.avisos)?d.avisos:[];
+  memoriaCompleta=Array.isArray(d.memoriaCalculo)?d.memoriaCalculo:[];
+  paginaAtual=1;
+  detalhesSection.hidden=true;
+  detalhesToggle.textContent='Ver detalhes do cálculo';
+  document.querySelector('#resumo').innerHTML=[
+   ['Status',d.status],['Data-base',dataPt(d.dataBase)],['Data de corte',dataPt(d.dataLimite)],['Saldo inicial',brl(d.saldoInicial)],['JAM calculado no período',brl(d.jamTotal)],['Saldo final',brl(d.saldoFinal)],['Períodos processados',String(memoriaCompleta.length)],['Dados fictícios',d.dadosDemonstracao?'Sim':'Não']
+  ].map(([a,b])=>`<div class="metric"><div class="muted">${a}</div><strong>${b}</strong></div>`).join('');
+  document.querySelector('#equacao').innerHTML=`
+   <div class="eq-card"><div class="muted">Saldo inicial</div><strong>${brl(d.saldoInicial)}</strong></div>
+   <div class="eq-op">+</div>
+   <div class="eq-card"><div class="muted">JAM acumulado calculado</div><strong>${brl(d.jamTotal)}</strong></div>
+   <div class="eq-op">=</div>
+   <div class="eq-card"><div class="muted">Saldo atualizado</div><strong>${brl(d.saldoFinal)}</strong></div>`;
+  document.querySelector('#fluxo').textContent='Estado inicial -> JAM período 1 -> estado atualizado -> JAM período 2 -> ... -> saldo final.';
+  document.querySelector('#demoAviso').hidden=!d.dadosDemonstracao;
+  renderPagina();
+  document.querySelector('#avisosBox').hidden=avisos.length===0;
+  document.querySelector('#avisos').innerHTML=avisos.map(a=>`<li>${a}</li>`).join('');
+ }catch(err){msg.className='error';msg.textContent='Falha de comunicação com o backend.';}
+});
+</script></body></html>
