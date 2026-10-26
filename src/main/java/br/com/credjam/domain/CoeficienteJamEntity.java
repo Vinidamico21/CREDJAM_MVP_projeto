@@ -7,6 +7,8 @@ import java.time.LocalDate;
 @Entity @Table(name="FGCRB550")
 public class CoeficienteJamEntity {
     @Id @Column(name="DATA_ATUALIZACAO") private LocalDate dataAtualizacao;
+    // Classe 0% (somente Atualização Monetária / TR); equivalente a VAL-COEFICIENTE-0 do COBOL.
+    @Column(name="COEF_0", nullable=false, precision=20, scale=12) private BigDecimal coef0;
     @Column(name="COEF_3", nullable=false, precision=20, scale=12) private BigDecimal coef3;
     @Column(name="COEF_4", nullable=false, precision=20, scale=12) private BigDecimal coef4;
     @Column(name="COEF_5", nullable=false, precision=20, scale=12) private BigDecimal coef5;
@@ -17,7 +19,7 @@ public class CoeficienteJamEntity {
     public LocalDate getDataAtualizacao(){ return dataAtualizacao; }
     public BigDecimal coeficiente(int taxa) {
         return switch (taxa) {
-            case 3 -> coef3; case 4 -> coef4; case 5 -> coef5; case 6 -> coef6;
+            case 0 -> coef0; case 3 -> coef3; case 4 -> coef4; case 5 -> coef5; case 6 -> coef6;
             default -> throw new IllegalArgumentException("Taxa não suportada: " + taxa);
         };
     }

@@ -30,6 +30,8 @@ public class AtualizacaoContaService {
     private final ConversaoMonetariaService conversoes = new ConversaoMonetariaService();
     private final ComplementoHistoricoService complemento1976 = new ComplementoHistoricoService();
     private final JAM6973Service jam6973 = new JAM6973Service();
+    private final BolsoesService bolsoes = new BolsoesService();
+    private final SaqueService saqueService = new SaqueService();
 
     public AtualizacaoContaService(ValidacaoAtualizacaoService validacao, CoeficienteJamRepository coeficientes,
       TaxaJurosService taxas, JamService jam, ContaAtualizacaoRepository contas,
@@ -62,6 +64,12 @@ public class AtualizacaoContaService {
         SBPC6973Service sbpc6973 = new SBPC6973Service();
         // FLAG-CTA-JUDICIAL do COBOL: conta judicial quando COD-TIPO-CONTA = 3.
         boolean contaJudicial = "3".equals(r.tipoConta());
+        // Cinco bolsões (seção 4): quando o cliente informa saldos por bolsão, o principal
+        // assume o valor informado; caso contrário o saldoInicial vira o principal (SBPC) e
+        // os demais bolsões ficam zerados — mantendo compatibilidade com o modo saldo único.
+        boolean contaOrigemFgi = Boolean.TRUE.equals(r.contaOrigemFgi());
+        BolsoesService.Estado estadoBolsoes = BolsoesService.Estado.de(r.saldos(), saldoInicial);
+        boolean usaBolsoes = r.saldos() != null;
         List<String> avisosSbpc = new ArrayList<>();
         if (r.lancamentosHistoricos() != null) {
             for (Modelo.LancamentoHistoricoRequest lancamento : r.lancamentosHistoricos()) {
@@ -112,7 +120,7 @@ public class AtualizacaoContaService {
             saldoComplementar = estadoConversao.saldoComplementar();
 
             var taxa=taxas.selecionar(proximo.getDataAtualizacao(), r.dataOpcao(), r.codigoAfastamento(),
-                r.dataAfastamento(), proximo.getDataAtualizacao());
+                r.dataAfastamento(), proximo.getDataAtualizacao(), r.classeRemuneracao());
             BigDecimal coef=proximo.coeficiente(taxa.taxa());
             if (coef==null || coef.signum()<0)
                 throw new ErroNegocioException("COEFICIENTE_INVALIDO", "Coeficiente ausente ou negativo.");
@@ -151,6 +159,16 @@ public class AtualizacaoContaService {
                 saldo = saldo.add(credito).setScale(2, java.math.RoundingMode.HALF_UP);
             }
             jamAcumulado=jamAcumulado.add(credito).setScale(2, java.math.RoundingMode.HALF_UP);
+
+            // Cinco bolsões (seção 4): cada bolsão é corrigido pelo MESMO coeficiente
+            // mensal da classe, sobre a sua própria base, de forma composta. A regra de
+            // bolsão negativo (com exceção FGI para SQVG) é aplicada dentro do serviço.
+            if (usaBolsoes) {
+                estadoBolsoes = bolsoes.aplicarMes(estadoBolsoes, coef, contaOrigemFgi);
+                if (regraEspecial == null) regraEspecial = "BOLSOES";
+                else regraEspecial = regraEspecial + "+BOLSOES";
+                observacoes.append(" Bolsões corrigidos pelo coeficiente do mês (SBPC/SQVG/SQFMP/Retorno FMP/Depósito rescisório).");
+            }
 
             var complemento = complemento1976.aplicar(dataCoef, saldo, saldoComplementar);
             if (complemento.aplicado()) {
@@ -227,12 +245,25 @@ public class AtualizacaoContaService {
             avisos.add("Nenhum lançamento individual foi fornecido para SBPC6973; a rotina só processou os saldos consolidados e os coeficientes disponíveis.");
         }
         avisos.addAll(avisosSbpc);
+        // Bolsões corrigidos (seção 4) e apuração do saque (seção 6). Quando o cliente
+        // não informa saldos por bolsão, a resposta de bolsões fica nula (modo saldo único).
+        Modelo.SaldosResponse saldosResp = usaBolsoes ? estadoBolsoes.toResponse() : null;
+        // Base de depósitos do bolsão pertinente ao saque: usa o principal informado quando
+        // há bolsões; senão o total de depósitos (ou o saldo inicial, como no fechamento).
+        BigDecimal depositosParaSaque = usaBolsoes
+            ? (r.saldos().principalSbpc() != null ? r.saldos().principalSbpc() : saldoInicialNaEscalaFinal)
+            : baseDepositos;
+        Modelo.SaqueResponse saqueResp = saqueService.apurar(r.saque(), r.tipoConta(), jamTotal, depositosParaSaque);
+        if (saqueResp != null && saqueResp.contaSemSaldo() && saqueResp.valorSaque().signum() == 0) {
+            avisos.add("Saque rejeitado: " + saqueResp.observacao());
+        }
+
         var resultado=new ResultadoAtualizacaoEntity(conta, saldo, jamTotal, ultimaData, demonstracao, versao);
         resultado=resultados.save(resultado);
         for (var item: memoria) historicos.save(new HistoricoAtualizacaoEntity(resultado,item));
         conta.setStatus("PROCESSADA");
         return new Modelo.ResultadoResponse(resultado.getId(),"PROCESSADA",r.origem(),r.dataBase(),r.dataLimite(),
-            saldoInicialNaEscalaFinal,saldo,jamTotal,demonstracao,avisos,memoria);
+            saldoInicialNaEscalaFinal,saldo,jamTotal,demonstracao,avisos,memoria,saldosResp,saqueResp);
     }
 
     private static BigDecimal moeda(BigDecimal valor) {

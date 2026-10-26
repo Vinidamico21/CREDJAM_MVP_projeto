@@ -12,7 +12,7 @@ import java.util.List;
  */
 public final class ConversaoMonetariaService {
     private static final List<Transicao> TRANSICOES = List.of(
-        new Transicao(LocalDate.of(1984, 8, 15), new BigDecimal("1"), "NORMALIZACAO_1984", "Normalização COBOL /100 e *100; sem mudança nominal líquida"),
+        new Transicao(LocalDate.of(1984, 8, 15), new BigDecimal("100"), "CONVERSAO_1984", "Conversão monetária /100 (Cruzeiro); conforme documento de regras do JAM"),
         new Transicao(LocalDate.of(1986, 2, 27), new BigDecimal("1000"), "CONVERSAO_1986", "Conversão monetária /1000; movimentos legados 990–994"),
         new Transicao(LocalDate.of(1989, 1, 15), new BigDecimal("1000"), "CONVERSAO_1989", "Conversão monetária /1000; movimentos legados 990–994"),
         new Transicao(LocalDate.of(1993, 8, 1), new BigDecimal("1000"), "CONVERSAO_1993", "Conversão monetária /1000; movimentos legados 097–098"),

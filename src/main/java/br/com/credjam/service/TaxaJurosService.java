@@ -30,6 +30,30 @@ public class TaxaJurosService {
     public TaxaSelecionada selecionar(LocalDate dataAtualizacao, LocalDate dataOpcao,
                                       String codigoAfastamento, LocalDate dataAfastamento,
                                       LocalDate dataProximoJam) {
+        return selecionar(dataAtualizacao, dataOpcao, codigoAfastamento, dataAfastamento, dataProximoJam, null);
+    }
+
+    /**
+     * Seleção com classe de remuneração fixa da conta. Conforme o documento de regras,
+     * a classe (0/3/4/5/6) é um atributo histórico do vínculo; quando informada, ela
+     * prevalece sobre a derivação VERTAXA. A classe 0% (só Atualização Monetária) só é
+     * alcançável por este caminho.
+     */
+    public TaxaSelecionada selecionar(LocalDate dataAtualizacao, LocalDate dataOpcao,
+                                      String codigoAfastamento, LocalDate dataAfastamento,
+                                      LocalDate dataProximoJam, Integer classeRemuneracao) {
+        if (classeRemuneracao != null) {
+            int classe = classeRemuneracao;
+            if (classe != 0 && classe != 3 && classe != 4 && classe != 5 && classe != 6) {
+                throw new ErroNegocioException("CLASSE_REMUNERACAO_INVALIDA",
+                    "A classe de remuneração da conta deve ser 0, 3, 4, 5 ou 6.");
+            }
+            String rotulo = classe == 0
+                ? "classe 0% (somente Atualização Monetária)"
+                : "classe fixa " + classe + "%";
+            return new TaxaSelecionada(classe,
+                "Classe de remuneração informada pela conta: " + rotulo + "; VERTAXA não aplicada.");
+        }
         String codigo = normalizarAfastamento(codigoAfastamento);
         // O COBOL inicializa TX-JUROS com 3%; somente o ramo de afastamentos listados
         // recalcula a taxa usando a data de opção, DTA-AUX e a evolução da FGCRB555.
